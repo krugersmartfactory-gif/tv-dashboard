@@ -5,7 +5,6 @@
   <title>TV Dashboard</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
   <style>
     html, body {
@@ -19,8 +18,8 @@
     #container {
       width: 100vw;
       height: 100vh;
-      overflow: hidden;
       position: relative;
+      overflow: hidden;
     }
 
     iframe {
@@ -28,14 +27,41 @@
       transform-origin: top left;
     }
 
-    #loading {
-      color: white;
-      font-size: 28px;
+    /* thanh loading dưới */
+    #loadingBar {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-family: Arial;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      width: 0%;
+      background: #00ffcc;
+      z-index: 999;
+      transition: width 0.3s;
+    }
+
+    /* nút zoom */
+    #controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #controls button {
+      font-size: 22px;
+      margin: 5px 0;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      cursor: pointer;
+    }
+
+    #controls button:active {
+      background: rgba(255,255,255,0.3);
     }
   </style>
 </head>
@@ -43,29 +69,36 @@
 <body>
 
 <div id="container">
-  <div id="loading">Loading dashboard...</div>
 
+  <!-- dashboard -->
   <iframe 
     id="frame"
     src="https://datastudio.google.com/embed/reporting/c8eeeae3-7a2f-4e90-b742-15dd046eb619/page/p_tum1v6kxed"
     allowfullscreen>
   </iframe>
+
+  <!-- loading -->
+  <div id="loadingBar"></div>
+
+  <!-- nút zoom -->
+  <div id="controls">
+    <button onclick="zoomIn()">+</button>
+    <button onclick="zoomOut()">-</button>
+  </div>
+
 </div>
 
-<!-- video giữ màn hình -->
+<!-- video giữ thức -->
 <video autoplay loop muted playsinline style="display:none">
   <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
 </video>
 
 <script>
   const frame = document.getElementById("frame");
-  const loading = document.getElementById("loading");
+  const bar = document.getElementById("loadingBar");
 
-  // ====== SCALE (CHỈNH SIZE TẠI ĐÂY) ======
-  let scale = 0.9; 
-  // 👉 1.0 = full
-  // 👉 0.9 = vừa đẹp TV
-  // 👉 1.2 = phóng to
+  // ===== SCALE =====
+  let scale = 0.9;
 
   function resizeFrame() {
     frame.style.width = (100 / scale) + "vw";
@@ -75,12 +108,35 @@
 
   resizeFrame();
 
-  // Ẩn loading khi load xong
+  function zoomIn() {
+    scale += 0.1;
+    resizeFrame();
+  }
+
+  function zoomOut() {
+    scale -= 0.1;
+    resizeFrame();
+  }
+
+  // ===== LOADING BAR =====
+  let progress = 0;
+  let loadingInterval = setInterval(() => {
+    progress += Math.random() * 8;
+    if (progress > 90) progress = 90;
+    bar.style.width = progress + "%";
+  }, 300);
+
   frame.onload = () => {
-    loading.style.display = "none";
+    clearInterval(loadingInterval);
+    bar.style.width = "100%";
+
+    setTimeout(() => {
+      bar.style.width = "0%";
+      progress = 0;
+    }, 500);
   };
 
-  // ====== WAKE LOCK ======
+  // ===== WAKE LOCK =====
   let wakeLock = null;
 
   async function keepAwake() {
@@ -97,12 +153,12 @@
     }
   });
 
-  // ====== AUTO REFRESH ======
+  // ===== AUTO REFRESH =====
   setInterval(() => {
     location.reload();
-  }, 600000); // 10 phút
+  }, 600000);
 
-  // ====== AUTO FIX TREO ======
+  // ===== AUTO FIX TREO =====
   setInterval(() => {
     try {
       frame.contentWindow.location.href;
@@ -110,18 +166,6 @@
       location.reload();
     }
   }, 30000);
-
-  // ====== PHÍM + / - ĐỂ ZOOM ======
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "+") {
-      scale += 0.1;
-      resizeFrame();
-    }
-    if (e.key === "-") {
-      scale -= 0.1;
-      resizeFrame();
-    }
-  });
 
 </script>
 
